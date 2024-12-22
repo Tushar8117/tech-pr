@@ -1,0 +1,2 @@
+boto3==1.28.0   # AWS SDK for Python
+pymysql==1.0.3  # MySQL driver for Python
