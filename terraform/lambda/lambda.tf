@@ -30,9 +30,9 @@ resource "aws_s3_object" "default_object" {
     ]
   })
 }
-#output "s3_endpoint_id" {
- # value = "vpce-0e1669da3d37c9508"
-#}
+output "s3_endpoint_id" {
+  value = "vpce-0e1669da3d37c9508"
+}
 
 
 # VPC Endpoint for S3
