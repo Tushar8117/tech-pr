@@ -31,7 +31,7 @@ resource "aws_s3_object" "default_object" {
   })
 }
 output "s3_endpoint_id" {
-  value = "vpce-0e1669da3d37c9508"
+  value = "vpce-0b7eadeb81dd92872"
 }
 
 
