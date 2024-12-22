@@ -8,19 +8,21 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                echo 'Checkout the code'
+                git branch: 'main', url: 'https://github.com/Tushar8117/tech-pr.git'
             }
         }
         stage('Setup ECR') {
             steps {
                 dir('src') {
                     script {
-                        // Initialize Terraform for ECR setup
-                        sh '''
-                        terraform init
-                        terraform plan -out=tfplan
-                        terraform apply -auto-approve tfplan
-                        '''
+                        withCredentials([aws(credentialsId: 'aws-id', region: "${AWS_REGION}")]) {
+                            sh '''
+                            terraform init
+                            terraform plan -out=tfplan
+                            terraform apply -auto-approve tfplan
+                            '''
+                        }
                     }
                 }
             }
@@ -29,11 +31,13 @@ pipeline {
             steps {
                 dir('src') {
                     script {
-                        sh '''
-                        $(aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin 442426880129.dkr.ecr.${AWS_REGION}.amazonaws.com)
-                        docker build -t ${DOCKER_IMAGE}:latest .
-                        docker push ${DOCKER_IMAGE}:latest
-                        '''
+                        withCredentials([aws(credentialsId: 'aws-id', region: "${AWS_REGION}")]) {
+                            sh '''
+                            aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${DOCKER_IMAGE}
+                            docker build -t ${DOCKER_IMAGE}:latest .
+                            docker push ${DOCKER_IMAGE}:latest
+                            '''
+                        }
                     }
                 }
             }
@@ -42,18 +46,31 @@ pipeline {
             steps {
                 dir('terraform') {
                     script {
-                        // Initialize Terraform for Lambda, RDS, and S3 setup
-                        sh '''
-                        terraform init
-                        terraform plan -out=tfplan
-                        terraform apply -auto-approve tfplan
-                        '''
+                        withCredentials([aws(credentialsId: 'aws-id', region: "${AWS_REGION}")]) {
+                            sh '''
+                            terraform init
+                            terraform plan -out=tfplan
+                            terraform apply -auto-approve tfplan
+                            '''
+                        }
                     }
                 }
             }
         }
     }
     post {
+        failure {
+            script {
+                echo 'Pipeline failed. Destroying all resources...'
+                withCredentials([aws(credentialsId: 'aws-id', region: "${AWS_REGION}")]) {
+                    // Destroy all resources created by Terraform
+                    sh '''
+        
+                    terraform destroy -auto-approve 
+                    '''
+                }
+            }
+        }
         always {
             echo 'Pipeline execution completed.'
         }
